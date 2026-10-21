@@ -1,5 +1,7 @@
 # Portofolio Deopatria Paskah
 
+**Live:** https://deo-portfolio-nine.vercel.app
+
 Portofolio satu halaman untuk Deopatria Paskah, mahasiswa Sistem Informasi Telkom University Jakarta.
 Semuanya HTML, CSS, dan JavaScript statis, jadi bisa di-hosting gratis dan setiap demo berjalan di browser pengunjung.
 Bahasa utama Indonesia, dengan tombol EN untuk versi Inggris.
