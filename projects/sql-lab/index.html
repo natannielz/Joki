@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lab SQL Event Kampus</title>
+  <meta name="description" content="Workbench SQL dengan database event kampus yang berjalan di browser lewat SQLite WebAssembly.">
+  <script>if (window.self !== window.top) document.documentElement.classList.add('in-frame');</script>
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="bar">
+    <div class="bar__title">
+      <svg class="bar__logo" viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5.5" rx="8" ry="3"/><path d="M4 5.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6M4 11.5v6c0 1.7 3.6 3 8 3s8-1.3 8-3v-6"/></svg>
+      <div>
+        <h1>Lab SQL Event Kampus</h1>
+        <p id="engine">Memuat SQLite…</p>
+      </div>
+    </div>
+    <a class="bar__back" href="../../index.html#projects">Kembali ke portofolio</a>
+  </header>
+
+  <div class="app">
+    <main class="work">
+      <section class="panel" aria-labelledby="editor-title">
+        <div class="panel__head">
+          <h2 id="editor-title">Kueri</h2>
+          <div class="panel__actions">
+            <button type="button" class="btn btn--ghost" id="reset">Reset database</button>
+            <button type="button" class="btn" id="run" disabled>Jalankan <kbd>Ctrl</kbd><kbd>Enter</kbd></button>
+          </div>
+        </div>
+        <textarea id="sql" spellcheck="false" aria-label="Editor SQL"></textarea>
+      </section>
+
+      <section class="panel panel--result" aria-labelledby="result-title">
+        <div class="panel__head">
+          <h2 id="result-title">Hasil</h2>
+          <div class="tabs" role="tablist" aria-label="Tampilan hasil">
+            <button type="button" role="tab" id="tab-table" aria-selected="true" aria-controls="grid">Tabel</button>
+            <button type="button" role="tab" id="tab-chart" aria-selected="false" aria-controls="chart">Grafik</button>
+          </div>
+          <p class="status" id="status" role="status" aria-live="polite">Menunggu database dimuat.</p>
+          <button type="button" class="btn btn--ghost" id="csv" disabled>Ekspor CSV</button>
+        </div>
+        <div class="grid" id="grid" role="tabpanel" aria-labelledby="tab-table" tabindex="0"></div>
+        <div class="chart" id="chart" role="tabpanel" aria-labelledby="tab-chart" hidden></div>
+      </section>
+    </main>
+
+    <aside class="side">
+      <section aria-labelledby="saved-title">
+        <h2 class="side__title" id="saved-title">Kueri tersimpan</h2>
+        <ul class="saved" id="saved"></ul>
+      </section>
+      <section aria-labelledby="schema-title">
+        <h2 class="side__title" id="schema-title">Skema</h2>
+        <p class="side__hint">Data contoh fiktif. “Hari ini” dikunci di 21 Oktober 2026. Klik nama kolom untuk menyisipkannya ke editor.</p>
+        <div id="schema"></div>
+      </section>
+    </aside>
+  </div>
+
+  <div class="tip" id="tip" hidden></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sql/sql.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+  <script src="seed.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

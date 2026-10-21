@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pipeline Sponsor</title>
+  <meta name="description" content="Lacak sponsor dari kontak pertama sampai dana diterima, ditulis dengan TypeScript.">
+  <script>if (window.self !== window.top) document.documentElement.classList.add('in-frame');</script>
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="page">
+    <header class="head">
+      <div>
+        <a class="back" href="../../index.html#projects">Kembali ke portofolio</a>
+        <p class="org">Penggalangan dana organisasi mahasiswa</p>
+        <h1 id="campaign">Perayaan Natal 2026</h1>
+        <p class="target" id="target"></p>
+      </div>
+      <div class="head__actions">
+        <button type="button" class="btn btn--ghost" id="export">Ekspor CSV</button>
+        <button type="button" class="btn" id="add">Tambah sponsor</button>
+      </div>
+    </header>
+
+    <section class="progress" aria-labelledby="progress-title">
+      <div class="progress__top">
+        <h2 id="progress-title">Menuju target</h2>
+        <span class="progress__pct" id="secured"></span>
+      </div>
+      <div class="meter" id="meter" role="meter" aria-label="Dana terkumpul" aria-valuemin="0" aria-valuemax="100">
+        <span class="meter__fill meter__fill--received" id="meter-received"></span><span class="meter__fill meter__fill--committed" id="meter-committed"></span>
+      </div>
+      <dl class="figures" id="figures"></dl>
+    </section>
+
+    <section aria-labelledby="pipeline-title">
+      <h2 class="section-title" id="pipeline-title">Tahapan</h2>
+      <div class="stages" id="stages" role="group" aria-label="Saring berdasarkan tahap"></div>
+    </section>
+
+    <section class="list" aria-labelledby="list-title">
+      <div class="list__bar">
+        <h2 class="section-title" id="list-title">Sponsor</h2>
+        <span class="count" id="count"></span>
+        <label class="search">
+          <span class="sr-only">Cari sponsor</span>
+          <input type="search" id="search" placeholder="Cari nama, kontak, atau catatan" autocomplete="off">
+        </label>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead id="thead"></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer class="foot">
+      <p>Data sponsor contoh bersifat fiktif. Perubahan Anda tersimpan di browser ini; tanggal dihitung relatif terhadap 21 Oktober 2026.</p>
+      <button type="button" class="link" id="reset">Kembalikan data contoh</button>
+    </footer>
+  </div>
+
+  <p class="sr-only" id="live" role="status" aria-live="polite"></p>
+
+  <dialog id="dialog" aria-labelledby="dialog-title">
+    <form id="form" novalidate>
+      <h2 id="dialog-title">Tambah sponsor</h2>
+      <label class="field">
+        <span>Nama sponsor</span>
+        <input name="name" autocomplete="organization" aria-describedby="err-name">
+        <small class="error" id="err-name"></small>
+      </label>
+      <label class="field">
+        <span>Narahubung</span>
+        <input name="contact" autocomplete="off">
+      </label>
+      <div class="row">
+        <label class="field">
+          <span>Tingkat</span>
+          <select name="tier" id="f-tier"></select>
+        </label>
+        <label class="field">
+          <span>Nilai (rupiah)</span>
+          <input name="amount" type="number" min="0" step="50000" inputmode="numeric" aria-describedby="err-amount">
+          <small class="error" id="err-amount"></small>
+        </label>
+      </div>
+      <div class="row">
+        <label class="field">
+          <span>Tahap</span>
+          <select name="stage" id="f-stage"></select>
+        </label>
+        <label class="field">
+          <span>Tindak lanjut berikutnya</span>
+          <input name="followUp" type="date">
+        </label>
+      </div>
+      <label class="field">
+        <span>Catatan</span>
+        <textarea name="notes" rows="3"></textarea>
+      </label>
+      <div class="dialog__actions">
+        <button type="button" class="btn btn--danger" id="delete" hidden>Hapus sponsor</button>
+        <span class="spacer"></span>
+        <button type="button" class="btn btn--ghost" id="cancel">Batal</button>
+        <button type="submit" class="btn" id="save">Tambah sponsor</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="dist/app.js"></script>
+</body>
+</html>

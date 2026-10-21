@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Analisis Laporan Sampah</title>
+  <meta name="description" content="Notebook Python di browser (Pyodide) yang menganalisis simulasi setahun laporan sampah di Tangerang Selatan.">
+  <script>if (window.self !== window.top) document.documentElement.classList.add('in-frame');</script>
+  <link rel="icon" href="../../assets/img/favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;500&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="top__inner">
+      <a class="top__back" href="../../index.html#projects">Kembali ke portofolio</a>
+      <nav class="top__toc" aria-label="Isi notebook" id="toc"></nav>
+      <div class="top__status">
+        <span class="engine" id="engine" data-state="loading">Memuat Python (sekitar 8 MB, tersimpan setelah kunjungan pertama)</span>
+        <button type="button" class="btn" id="run-all" disabled>Jalankan semua sel</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="doc">
+    <h1>Analisis Laporan Sampah</h1>
+    <p class="lede">Warga Tangerang Selatan melaporkan masalah sampah: tempat sampah penuh, pengangkutan yang terlewat, sampah dibuang di pinggir jalan. Notebook ini mensimulasikan setahun laporan tersebut lalu menjawab tiga pertanyaan yang penting bagi dinas kebersihan: dari mana laporan datang, masalah apa yang paling lama ditangani, dan kapan puncaknya.</p>
+    <p class="meta">Data disimulasikan dengan seed acak yang tetap, jadi setiap kali dijalankan hasilnya sama. Ubah sel mana pun lalu jalankan lagi untuk bereksperimen. Python berjalan di browser Anda lewat Pyodide; tidak ada data yang dikirim ke server.</p>
+
+    <section class="cell" data-cell id="sel-1">
+      <h2>1. Buat data laporan setahun</h2>
+      <p>Setiap kecamatan mendapat laporan sebanding jumlah penduduk dan seberapa aktif warganya memakai aplikasi pelaporan. Musim hujan (November sampai Maret) membawa lebih banyak laporan, dan setiap kategori punya waktu penanganan khasnya sendiri.</p>
+      <script type="text/x-python">
+import random
+from datetime import datetime, timedelta
+
+random.seed(2025)
+
+# Jumlah penduduk (dibulatkan), hanya untuk membobot simulasi
+DISTRICTS = {
+    "Pondok Aren": 380_000,
+    "Pamulang": 360_000,
+    "Ciputat": 240_000,
+    "Ciputat Timur": 200_000,
+    "Serpong": 180_000,
+    "Serpong Utara": 170_000,
+    "Setu": 90_000,
+}
+
+# Seberapa aktif warga memakai aplikasi pelaporan (1.0 = rata-rata)
+APP_USE = {
+    "Pondok Aren": 0.9, "Pamulang": 1.0, "Ciputat": 1.1, "Ciputat Timur": 1.0,
+    "Serpong": 1.45, "Serpong Utara": 1.3, "Setu": 0.65,
+}
+
+# kategori: (porsi laporan, rata-rata hari penanganan)
+CATEGORIES = {
+    "Tempat sampah penuh":   (0.32, 1.4),
+    "Pengangkutan terlewat": (0.26, 1.9),
+    "Pembuangan liar":       (0.20, 4.6),
+    "Pembakaran sampah":     (0.12, 0.9),
+    "Saluran tersumbat":     (0.10, 5.8),
+}
+
+RAINY = {11, 12, 1, 2, 3}
+START = datetime(2025, 1, 1)
+
+def random_day():
+    """Pilih satu hari di 2025, lebih sering di musim hujan."""
+    while True:
+        day = START + timedelta(days=random.randint(0, 364))
+        if day.month in RAINY or random.random() < 0.72:
+            return day
+
+weights = [DISTRICTS[d] * APP_USE[d] for d in DISTRICTS]
+reports = []
+for i in range(1, 1801):
+    district = random.choices(list(DISTRICTS), weights=weights)[0]
+    category = random.choices(list(CATEGORIES), weights=[c[0] for c in CATEGORIES.values()])[0]
+    reported_at = random_day() + timedelta(hours=random.randint(6, 21))
+    typical = CATEGORIES[category][1] * (1.35 if district == "Setu" else 1.0)
+    still_open = random.random() < 0.035
+    reports.append({
+        "id": f"LP-{i:04d}",
+        "district": district,
+        "category": category,
+        "reported_at": reported_at,
+        "days_to_resolve": None if still_open else round(random.expovariate(1 / typical) + 0.2, 1),
+    })
+
+total = f"{len(reports):,}".replace(",", ".")
+print(f"{total} laporan dibuat untuk 1 Januari sampai 31 Desember 2025.")
+print("Tiga laporan pertama:")
+for r in reports[:3]:
+    print(" ", r["id"], r["reported_at"].strftime("%d/%m"), r["district"], "|", r["category"], "|", r["days_to_resolve"], "hari")
+</script>
+    </section>
+
+    <section class="cell" data-cell id="sel-2">
+      <h2>2. Dari mana laporan datang?</h2>
+      <p>Jumlah mentah selalu menguntungkan kecamatan terbesar, jadi perbandingan yang adil adalah laporan per 10.000 penduduk.</p>
+      <script type="text/x-python">
+from collections import Counter
+
+per_district = Counter(r["district"] for r in reports)
+per_10k = {d: per_district[d] / DISTRICTS[d] * 10_000 for d in DISTRICTS}
+ranked = sorted(per_10k.items(), key=lambda kv: kv[1], reverse=True)
+
+for district, rate in ranked:
+    print(f"{district:<14} {per_district[district]:>4} laporan   {rate:5.1f} per 10.000 penduduk")
+
+show_bars(
+    "Laporan per 10.000 penduduk, 2025",
+    [d for d, _ in ranked],
+    [round(v, 1) for _, v in ranked],
+)
+</script>
+    </section>
+
+    <section class="cell" data-cell id="sel-3">
+      <h2>3. Masalah apa yang paling lama ditangani?</h2>
+      <p>Dinas menargetkan setiap laporan selesai dalam tiga hari. Median dipakai, bukan rata-rata, karena beberapa kasus yang sangat lama akan mendistorsi rata-rata.</p>
+      <script type="text/x-python">
+from statistics import median
+
+TARGET_DAYS = 3
+
+summary = []
+for category in CATEGORIES:
+    days = [r["days_to_resolve"] for r in reports
+            if r["category"] == category and r["days_to_resolve"] is not None]
+    missed = sum(d > TARGET_DAYS for d in days) / len(days)
+    summary.append((category, len(days), median(days), missed))
+
+summary.sort(key=lambda row: row[2], reverse=True)
+
+show_table(
+    ["Kategori", "Selesai", "Median hari", "Lewat target 3 hari"],
+    [[c, n, f"{m:.1f}".replace(".", ","), f"{p:.0%}"] for c, n, m, p in summary],
+)
+show_bars(
+    "Median hari penyelesaian per kategori",
+    [row[0] for row in summary],
+    [round(row[2], 1) for row in summary],
+    unit=" hari",
+)
+</script>
+    </section>
+
+    <section class="cell" data-cell id="sel-4">
+      <h2>4. Di kecamatan mana penanganan paling lambat?</h2>
+      <p>Heatmap ini menggabungkan dua sudut pandang: kecamatan dan kategori. Warna yang lebih gelap berarti median penanganan lebih lama.</p>
+      <script type="text/x-python">
+grid = []
+for district in DISTRICTS:
+    row = []
+    for category in CATEGORIES:
+        days = [r["days_to_resolve"] for r in reports
+                if r["district"] == district and r["category"] == category
+                and r["days_to_resolve"] is not None]
+        row.append(round(median(days), 1) if days else None)
+    grid.append(row)
+
+slowest = max(((d, c, grid[i][j]) for i, d in enumerate(DISTRICTS)
+               for j, c in enumerate(CATEGORIES) if grid[i][j] is not None),
+              key=lambda x: x[2])
+print(f"Paling lambat: {slowest[1]} di {slowest[0]}, median {str(slowest[2]).replace('.', ',')} hari.")
+
+show_heatmap(
+    "Median hari penyelesaian per kecamatan dan kategori",
+    list(DISTRICTS), list(CATEGORIES), grid, unit=" hari",
+)
+</script>
+    </section>
+
+    <section class="cell" data-cell id="sel-5">
+      <h2>5. Kapan laporan memuncak?</h2>
+      <p>Menghitung laporan per bulan menunjukkan apakah musim hujan benar-benar menambah pekerjaan.</p>
+      <script type="text/x-python">
+MONTHS = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun",
+          "Jul", "Agu", "Sep", "Okt", "Nov", "Des"]
+
+by_month = Counter(r["reported_at"].month for r in reports)
+monthly = [by_month[m] for m in range(1, 13)]
+
+show_line("Laporan per bulan, 2025", MONTHS, monthly, unit=" laporan")
+</script>
+    </section>
+
+    <section class="cell" data-cell id="sel-6">
+      <h2>6. Kesimpulan</h2>
+      <p>Temuan di bawah ditulis oleh kode dari hasil di atas, jadi ikut berubah saat Anda mengubah simulasinya.</p>
+      <script type="text/x-python">
+top_district, top_rate = ranked[0]
+low_district, low_rate = ranked[-1]
+slow = summary[0]
+still_open = sum(r["days_to_resolve"] is None for r in reports)
+rainy_avg = sum(by_month[m] for m in RAINY) / len(RAINY)
+dry_avg = sum(by_month[m] for m in range(4, 11)) / 7
+
+def id_num(x, digits=1):
+    return f"{x:.{digits}f}".replace(".", ",")
+
+print(f"1. {top_district} paling banyak melapor per penduduk ({id_num(top_rate)} per 10.000), "
+      f"{id_num(top_rate / low_rate)} kali lipat {low_district}.")
+print(f"2. {slow[0]} paling lama ditangani: median {id_num(slow[2])} hari, "
+      f"dan {slow[3]:.0%} kasus melewati target {TARGET_DAYS} hari.")
+print(f"3. Bulan musim hujan rata-rata {rainy_avg:.0f} laporan, {rainy_avg / dry_avg - 1:.0%} lebih banyak dari musim kemarau.")
+print(f"4. {still_open} laporan ({id_num(still_open / len(reports) * 100)}%) masih terbuka di akhir tahun.")
+</script>
+    </section>
+  </main>
+
+  <div class="tip" id="tip" role="tooltip" hidden></div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.4/full/pyodide.js"></script>
+  <script src="charts.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
